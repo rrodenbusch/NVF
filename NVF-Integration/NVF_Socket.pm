@@ -84,6 +84,7 @@ sub GetNVFCounters {
 	return $fields;
 }
 
+
 sub GetRunPath {
 	my $logger = Log::Log4perl->get_logger();
 	my $socket = shift;
