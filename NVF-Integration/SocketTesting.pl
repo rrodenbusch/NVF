@@ -4,6 +4,7 @@ use warnings;
 use NVF_Socket;
 use Log::Log4perl qw(:easy);
 
+
 my @Gates = ('Gate_Bottom','GATE_RIGHT','GATE_LEFT','GateTop');
 Log::Log4perl::init('/home/mThinx/bin/Log4Perl.conf');
 my $logger = Log::Log4perl->get_logger();
