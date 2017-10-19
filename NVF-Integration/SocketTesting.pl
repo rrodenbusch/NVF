@@ -4,33 +4,28 @@ use warnings;
 use NVF_Socket;
 use Log::Log4perl qw(:easy);
 
-
-my @Gates = ('Gate_Bottom','GATE_RIGHT','GATE_LEFT','GateTop');
-
-Log::Log4perl::init('/home/mThinx/bin/Log4Perl.conf');
-my $logger = Log::Log4perl->get_logger();
-$logger->info("Startup");
-my $intf = NVF_Socket->new($logger);
- 
-# create a connecting socket
-my ($host,$port) = ('127.0.0.1','8888');
-my $socket = $intf->ConnectNVF($host,$port);
-die "cannot connect to the server $!\n" unless $socket;
-$logger->info("Connected to the server");
-my $NVFresp = $intf->GetNVFID();
-
+my @Gates = ('RIGHT','Left','Top');
 my ($start,$end) = ('2017-07-25 00:00:00','2017-07-25 23:59:59');
-my $i = 0;
-my $abort = 0;
+
+my $curNVF = NVF_Socket->new('/home/mThinx/bin/Log4Perl.conf');
+
+
+$curNVF->ConnectNVF('127.0.0.1','8888') or die "cannot connect to the server $!\n";
+print "Connected to Server\n";
+my $NVFresp = $curNVF->GetNVFID();
+$curNVF->{logger}->info("Connected\n");
+$NVFresp = $curNVF->GetRunPath();
+
+my ($i,$abort) = (0,0);
 $SIG{HUP} = sub { print "$i\n"};
 $SIG{ABRT} = sub { $abort = 1};
 
+my ($epoch,$in,$out);
 do {
-	#$NVFresp = NVF_Socket::GetNVFCounters($socket, $start,$end, @Gates);
-	#sleep 5;
-	$NVFresp = $intf->GetRunPath();
+	($in,$out) = $curNVF->getCurrentCount('GATE_MAIN');
+	$epoch = time();
 	if ($i % 12 == 0) {
-		$logger->info("Completed loop number $i");
+		$curNVF->{logger}->info("Completed loop number $i");
 		print "Completed $i\t $NVFresp->{RequestDate}\n";
 	}
 	$i++;
@@ -38,13 +33,13 @@ do {
 } while ((!$abort) && $NVFresp);
 
 if ($abort) {
-	$logger->info("Aborting at count $i!");
+	$curNVF->{logger}->info("Aborting at count $i!");
 	print "Aborting at count $i\n" if ($abort);
 } else {
-	$logger->warn("Exiting at count $i!");
+	$curNVF->{logger}->warn("Exiting at count $i!");
 	print "Exiting at $i\n" if (!$abort);
 }
 
-$intf->close();
+$curNVF->close();
 
 1;
