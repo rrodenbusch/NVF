@@ -45,18 +45,19 @@ sub ParseResponse {
 	}
 	return $parsed;
 }
+
 sub GetNVFID {
 	my $logger = Log::Log4perl->get_logger();
 	my $socket = shift;
 	my $req = 'PRFX_GET_INSTALLATION_ID("HEX");';
 	# data to send to a server
 	my $size = $socket->send($req);
-	$logger->trace("Sent ID request data of length $size");
+	$logger->trace("Sent: $req");
 
 	# receive a response of up to 1024 characters from server
 	my $response = "";
 	$socket->recv($response, 1024);
-	$logger->debug("Received ID response: $response");
+	$logger->debug("Received: $response");
 	my $fields = ParseResponse($response,'NVFID');
 	return $fields;
 }
@@ -69,17 +70,17 @@ sub GetNVFCounters {
 	
 	my $logger = Log::Log4perl->get_logger();
 	my $req = 'PRFX_GET_VL_COUNTERS_BY_NAME(';
-	my $gatelist = join('",',@cntrs) . ',';
+	my $gatelist = join('",',@cntrs);
 	$req .= $gatelist . ',"' . $start . '","' . $end . '");';
 	
 	# data to send to a server
 	my $size = $socket->send($req);
-	$logger->trace("Sent counter request, data of length $size");
+	$logger->trace("Sent: $req");
 
 	# receive a response of up to 1024 characters from server
 	my $response = "";
 	$socket->recv($response, 1024);
-	$logger->debug("Received counter response: $response");
+	$logger->debug("Received: $response");
 	my $fields = ParseResponse($response,'NVFCounters');
 	return $fields;
 }
@@ -91,12 +92,12 @@ sub GetRunPath {
 	my $req = 'PRFX_GET_DEFAULT_RUN_PATH();';
 	# data to send to a server
 	my $size = $socket->send($req);
-	$logger->trace("Sent Path request data of length $size");
+	$logger->trace("Sent: $req");
 
 	# receive a response of up to 1024 characters from server
 	my $response = "";
 	$socket->recv($response, 1024);
-	$logger->debug("Received Path response: $response");
+	$logger->debug("Received: $response");
 	my $fields = ParseResponse($response,'RunPath');
 	return $fields;
 }
