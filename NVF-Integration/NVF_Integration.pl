@@ -2,44 +2,27 @@ use lib "$ENV{HOME}/bin";
 use strict;
 use warnings;
 use NVF_Socket;
+use Getopt::Std;
 use Log::Log4perl qw(:easy);
 
-my @Gates = ('RIGHT','Left','Top');
-my ($start,$end) = ('2017-07-25 00:00:00','2017-07-25 23:59:59');
+# Setup Signals
+my %sig = ( HUP => 0, ABRT => 0, USR1 => 0, USR2 => 0, CONT => 0 );
+$SIG{HUP}  = sub {$sig{HUP} = 1};
+$SIG{ABRT} = sub {$sig{ABRT} = 1};
+$SIG{USR1} = sub {$sig{USR1} = 1};
+$SIG{USR2} = sub {$sig{USR2} = 1};
+$SIG{CONT} = sub {$sig{CONT} = 1};
 
-my $curNVF = NVF_Socket->new('/home/mThinx/bin/Log4Perl.conf');
 
-
-$curNVF->ConnectNVF('127.0.0.1','8888') or die "cannot connect to the server $!\n";
-print "Connected to Server\n";
-my $NVFresp = $curNVF->GetNVFID();
-$curNVF->{logger}->info("Connected\n");
-$NVFresp = $curNVF->GetRunPath();
-
-my ($i,$abort) = (0,0);
-$SIG{HUP} = sub { print "$i\n"};
-$SIG{ABRT} = sub { $abort = 1};
-
-my ($epoch,$in,$out);
+# Setup command line options
+my $curNVF = NVF_Socket->new(\%sig);
+my ($epoch,$in,$out,$i);
 do {
-	($in,$out) = $curNVF->getCurrentCount('GATE_MAIN');
-	$epoch = time();
-	if ($i % 12 == 0) {
-		$curNVF->{logger}->info("Completed loop number $i");
-		print "Completed $i\t $NVFresp->{RequestDate}\n";
-	}
-	$i++;
-	sleep 5;
-} while ((!$abort) && $NVFresp);
+	($in,$out) = $curNVF->getCurrentCounts();
+	$curNVF->pollWait();
+} while ((!$sig{ABRT}));
 
-if ($abort) {
-	$curNVF->{logger}->info("Aborting at count $i!");
-	print "Aborting at count $i\n" if ($abort);
-} else {
-	$curNVF->{logger}->warn("Exiting at count $i!");
-	print "Exiting at $i\n" if (!$abort);
-}
-
-$curNVF->close();
+$curNVF->{logger}->info("Exiting based on signal\n") if ($sig{ABRT});
+$curNVF->closeConnection();
 
 1;
